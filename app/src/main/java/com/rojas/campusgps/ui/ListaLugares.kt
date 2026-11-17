@@ -32,6 +32,7 @@ fun ListaLugares(
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
     masCercanoId: Int?,
+    lugaresEnRadio: Set<Int>,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -41,6 +42,7 @@ fun ListaLugares(
     ) {
         items(lugares, key = { it.lugar.id }) { item ->
             val esSeleccionado = item.lugar.id == seleccionado
+            val estaEnRadio = item.lugar.id in lugaresEnRadio
 
             Card(
                 onClick = { onClick(item.lugar.id) },
@@ -75,7 +77,18 @@ fun ListaLugares(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(item.lugar.nombre, fontWeight = FontWeight.Bold)
-                        Text(item.lugar.categoria, color = Color.Gray)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(item.lugar.categoria, color = Color.Gray)
+                            if (estaEnRadio) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Dentro del radio",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
 
                     val distancia = item.metros
@@ -87,4 +100,3 @@ fun ListaLugares(
         }
     }
 }
-

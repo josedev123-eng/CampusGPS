@@ -39,6 +39,8 @@ fun PantallaMapa(vm: MapaViewModel) {
     val seleccionado by vm.seleccionado.collectAsState()
     val masCercano by vm.masCercano.collectAsState()
     val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
+    val radioMetros by vm.radioMetros.collectAsState()
+    val lugaresEnRadio by vm.lugaresEnRadio.collectAsState()
 
     val contexto = LocalContext.current
     val lanzador = rememberLauncherForActivityResult(
@@ -114,12 +116,19 @@ fun PantallaMapa(vm: MapaViewModel) {
                 onCategoriaSeleccionada = { categoria -> vm.filtrar(categoria) }
             )
 
+            // Selector del radio de cercanía
+            SelectorRadio(
+                radioActual = radioMetros,
+                onRadioSeleccionado = { metros -> vm.cambiarRadio(metros) }
+            )
+
             // El mapa ocupa todo el espacio libre
             MapaUbicacion(
                 estado = estado,
                 lugares = lugares,
                 seleccionado = seleccionado,
                 masCercano = masCercano,
+                radioMetros = radioMetros,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -130,6 +139,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 lugares = lugares,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
+                lugaresEnRadio = lugaresEnRadio,
                 onClick = { id -> vm.seleccionar(id) },
                 modifier = Modifier
                     .fillMaxWidth()
