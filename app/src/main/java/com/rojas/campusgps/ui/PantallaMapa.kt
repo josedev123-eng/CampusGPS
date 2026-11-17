@@ -4,6 +4,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import java.util.Locale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -91,7 +95,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 .padding(padding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
                 onClick = { alPulsar() },
@@ -104,25 +108,39 @@ fun PantallaMapa(vm: MapaViewModel) {
                 is UbicacionUi.Inicial -> Text("Pulsa el botón para ver dónde estás")
                 is UbicacionUi.Buscando -> CircularProgressIndicator()
                 is UbicacionUi.Lista -> {
-                    Text("Latitud: ${e.posicion.latitud}")
-                    Text("Longitud: ${e.posicion.longitud}")
+                    // Latitud y longitud en una sola línea para dejar más espacio al mapa
+                    Text(
+                        text = String.format(
+                            Locale.US, "Latitud: %.6f   Longitud: %.6f",
+                            e.posicion.latitud, e.posicion.longitud
+                        ),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
                 is UbicacionUi.Error -> MensajeError(error = e, onReintentar = { alPulsar() })
             }
 
-            // Chips de filtro por categoría
-            FiltroCategorias(
-                categoriaSeleccionada = categoriaSeleccionada,
-                onCategoriaSeleccionada = { categoria -> vm.filtrar(categoria) }
-            )
+            // Filtro y radio en una sola fila con scroll horizontal
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Chips de filtro por categoría
+                FiltroCategorias(
+                    categoriaSeleccionada = categoriaSeleccionada,
+                    onCategoriaSeleccionada = { categoria -> vm.filtrar(categoria) }
+                )
 
-            // Selector del radio de cercanía
-            SelectorRadio(
-                radioActual = radioMetros,
-                // Sin ubicación no hay círculo ni distancias, así que el selector no hace nada
-                habilitado = estado is UbicacionUi.Lista,
-                onRadioSeleccionado = { metros -> vm.cambiarRadio(metros) }
-            )
+                // Selector del radio de cercanía
+                SelectorRadio(
+                    radioActual = radioMetros,
+                    // Sin ubicación no hay círculo ni distancias, así que el selector no hace nada
+                    habilitado = estado is UbicacionUi.Lista,
+                    onRadioSeleccionado = { metros -> vm.cambiarRadio(metros) }
+                )
+            }
 
             // El mapa ocupa todo el espacio libre
             MapaUbicacion(
@@ -145,22 +163,32 @@ fun PantallaMapa(vm: MapaViewModel) {
                 onClick = { id -> vm.seleccionar(id) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
+                    .height(180.dp)
             )
 
-            // Botón para ir al lugar más cercano
-            OutlinedButton(
-                onClick = { masCercano?.let { vm.seleccionar(it.id) } },
-                enabled = masCercano != null
+            // Botón para ir al más cercano y, al lado, el texto con su distancia
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Ir al más cercano")
-            }
+                OutlinedButton(
+                    onClick = { masCercano?.let { vm.seleccionar(it.id) } },
+                    enabled = masCercano != null
+                ) {
+                    Text("Ir al más cercano")
+                }
 
-            val cercano = masCercano
-            if (cercano != null) {
-                val metros = lugares.find { it.lugar.id == cercano.id }?.metros
-                val texto = if (metros != null) formatearDistancia(metros) else ""
-                Text("Más cercano: ${cercano.nombre} ($texto)")
+                val cercano = masCercano
+                if (cercano != null) {
+                    val metros = lugares.find { it.lugar.id == cercano.id }?.metros
+                    val texto = if (metros != null) formatearDistancia(metros) else ""
+                    Text(
+                        text = "Más cercano: ${cercano.nombre} ($texto)",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
