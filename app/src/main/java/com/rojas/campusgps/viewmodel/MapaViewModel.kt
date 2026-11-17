@@ -1,11 +1,14 @@
 package com.rojas.campusgps.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rojas.campusgps.data.LugaresRepository
 import com.rojas.campusgps.data.UbicacionRepository
 import com.rojas.campusgps.model.LugarConDistancia
+import com.rojas.campusgps.model.Posicion
 import com.rojas.campusgps.model.UbicacionUi
+import com.rojas.campusgps.util.distanciaMetros
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +36,7 @@ class MapaViewModel(
             ubicacionRepo.obtenerPosicion()
                 .onSuccess {
                     _estado.value = UbicacionUi.Lista(it)
-                    // TODO Paso 5: actualizarDistancias(it)
+                    actualizarDistancias(it)
                 }
                 .onFailure { _estado.value = UbicacionUi.Error(mensajeDe(it)) }
         }
@@ -41,6 +44,19 @@ class MapaViewModel(
 
     fun permisoDenegado() {
         _estado.value = UbicacionUi.Error("Sin permiso de ubicación no puedo mostrar dónde estás")
+    }
+
+    // Calcula la distancia a cada lugar y ordena del más cercano al más lejano
+    private fun actualizarDistancias(posicion: Posicion) {
+        val lista = lugaresRepo.obtenerLugares().map { lugar ->
+            LugarConDistancia(lugar, distanciaMetros(posicion, lugar))
+        }
+        val ordenada = lista.sortedBy { it.metros }
+        _lugares.value = ordenada
+
+        ordenada.forEach {
+            Log.d("CampusGPS", "${it.lugar.nombre}: ${it.metros} m")
+        }
     }
 
     // TODO Paso 6: fun seleccionar(id: Int?)
