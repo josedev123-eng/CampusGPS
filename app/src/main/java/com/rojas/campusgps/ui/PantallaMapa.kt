@@ -1,19 +1,19 @@
 package com.rojas.campusgps.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.rememberScrollState
-import java.util.Locale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +26,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +37,7 @@ import androidx.core.content.ContextCompat
 import com.rojas.campusgps.model.UbicacionUi
 import com.rojas.campusgps.util.formatearDistancia
 import com.rojas.campusgps.viewmodel.MapaViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,11 +51,16 @@ fun PantallaMapa(vm: MapaViewModel) {
     val lugaresEnRadio by vm.lugaresEnRadio.collectAsState()
 
     val contexto = LocalContext.current
+
+    // Estado de Compose para rastrear si el usuario concedió el permiso de ubicación
+    var tienePermiso by remember { mutableStateOf(tienePermisoUbicacion(contexto)) }
+
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { resultado ->
-        // Si aceptó FINE o COARSE, buscamos la ubicación
-        if (resultado.values.any { it }) {
+        val concedido = resultado.values.any { it }
+        tienePermiso = concedido
+        if (concedido) {
             vm.buscar()
         } else {
             vm.permisoDenegado()
@@ -59,14 +68,10 @@ fun PantallaMapa(vm: MapaViewModel) {
     }
 
     fun alPulsar() {
-        val fine = ContextCompat.checkSelfPermission(
-            contexto, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        val coarse = ContextCompat.checkSelfPermission(
-            contexto, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+        val concedido = tienePermisoUbicacion(contexto)
+        tienePermiso = concedido
 
-        if (fine || coarse) {
+        if (concedido) {
             vm.buscar()
         } else {
             lanzador.launch(
@@ -149,6 +154,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 seleccionado = seleccionado,
                 masCercano = masCercano,
                 radioMetros = radioMetros,
+                tienePermiso = tienePermiso,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -192,4 +198,16 @@ fun PantallaMapa(vm: MapaViewModel) {
             }
         }
     }
+}
+
+// Revisa si la app ya tiene permiso de ubicación (FINE o COARSE).
+// Está en un solo lugar para no repetir el mismo código en la pantalla.
+private fun tienePermisoUbicacion(contexto: Context): Boolean {
+    val fine = ContextCompat.checkSelfPermission(
+        contexto, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    val coarse = ContextCompat.checkSelfPermission(
+        contexto, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    return fine || coarse
 }

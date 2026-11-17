@@ -11,6 +11,8 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
@@ -25,6 +27,7 @@ fun MapaUbicacion(
     seleccionado: Int?,
     masCercano: Lugar?,
     radioMetros: Int,
+    tienePermiso: Boolean,
     modifier: Modifier = Modifier
 ) {
     val camara = rememberCameraPositionState {
@@ -55,7 +58,14 @@ fun MapaUbicacion(
         }
     }
 
-    GoogleMap(modifier = modifier, cameraPositionState = camara) {
+    GoogleMap(
+        modifier = modifier,
+        cameraPositionState = camara,
+        // Activa el punto azul de ubicación nativo solo si hay permiso
+        properties = MapProperties(isMyLocationEnabled = tienePermiso),
+        // Activa el botón nativo para ir a mi ubicación solo si hay permiso
+        uiSettings = MapUiSettings(myLocationButtonEnabled = tienePermiso)
+    ) {
         if (estado is UbicacionUi.Lista) {
             val miPosicion = LatLng(estado.posicion.latitud, estado.posicion.longitud)
 
