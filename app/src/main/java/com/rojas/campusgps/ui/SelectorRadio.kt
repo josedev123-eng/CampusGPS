@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SelectorRadio(
     radioActual: Int,
+    habilitado: Boolean,
     onRadioSeleccionado: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -25,6 +26,7 @@ fun SelectorRadio(
             FilterChip(
                 selected = (opcion == radioActual),
                 onClick = { onRadioSeleccionado(opcion) },
+                enabled = habilitado,
                 label = { Text("$opcion m") }
             )
         }

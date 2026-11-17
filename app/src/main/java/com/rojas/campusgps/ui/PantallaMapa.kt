@@ -119,6 +119,8 @@ fun PantallaMapa(vm: MapaViewModel) {
             // Selector del radio de cercanía
             SelectorRadio(
                 radioActual = radioMetros,
+                // Sin ubicación no hay círculo ni distancias, así que el selector no hace nada
+                habilitado = estado is UbicacionUi.Lista,
                 onRadioSeleccionado = { metros -> vm.cambiarRadio(metros) }
             )
 
