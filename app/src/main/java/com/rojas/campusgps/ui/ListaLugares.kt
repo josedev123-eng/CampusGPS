@@ -31,6 +31,7 @@ import com.rojas.campusgps.util.formatearDistancia
 fun ListaLugares(
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
+    masCercanoId: Int?,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -65,7 +66,10 @@ fun ListaLugares(
                     Box(
                         modifier = Modifier
                             .size(12.dp)
-                            .background(Color(0xFF2196F3), CircleShape)
+                            .background(
+                                if (item.lugar.id == masCercanoId) Color(0xFF4CAF50) else Color(0xFF2196F3),
+                                CircleShape
+                            )
                     )
                     Spacer(modifier = Modifier.width(12.dp))
 
