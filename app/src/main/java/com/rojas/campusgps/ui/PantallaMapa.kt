@@ -38,6 +38,7 @@ fun PantallaMapa(vm: MapaViewModel) {
     val lugares by vm.lugares.collectAsState()
     val seleccionado by vm.seleccionado.collectAsState()
     val masCercano by vm.masCercano.collectAsState()
+    val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
 
     val contexto = LocalContext.current
     val lanzador = rememberLauncherForActivityResult(
@@ -106,6 +107,12 @@ fun PantallaMapa(vm: MapaViewModel) {
                 }
                 is UbicacionUi.Error -> MensajeError(error = e, onReintentar = { alPulsar() })
             }
+
+            // Chips de filtro por categoría
+            FiltroCategorias(
+                categoriaSeleccionada = categoriaSeleccionada,
+                onCategoriaSeleccionada = { categoria -> vm.filtrar(categoria) }
+            )
 
             // El mapa ocupa todo el espacio libre
             MapaUbicacion(

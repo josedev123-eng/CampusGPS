@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,13 +28,40 @@ class MapaViewModel(
     private val _estado = MutableStateFlow<UbicacionUi>(UbicacionUi.Inicial)
     val estado: StateFlow<UbicacionUi> = _estado.asStateFlow()
 
+    // Lista original con todos los lugares
     private val _lugares = MutableStateFlow(
         lugaresRepo.obtenerLugares().map { LugarConDistancia(it, null) }
     )
-    val lugares: StateFlow<List<LugarConDistancia>> = _lugares.asStateFlow()
+
+    // Categoría seleccionada (null si no hay ninguna seleccionada)
+    private val _categoriaSeleccionada = MutableStateFlow<String?>(null)
+    val categoriaSeleccionada: StateFlow<String?> = _categoriaSeleccionada.asStateFlow()
+
+    // Lista de lugares filtrada por la categoría seleccionada
+    val lugares: StateFlow<List<LugarConDistancia>> = combine(
+        _lugares,
+        _categoriaSeleccionada
+    ) { lista, categoria ->
+        if (categoria == null) {
+            lista
+        } else {
+            lista.filter { it.lugar.categoria == categoria }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _lugares.value)
 
     private val _seleccionado = MutableStateFlow<Int?>(null)
     val seleccionado: StateFlow<Int?> = _seleccionado.asStateFlow()
+
+    // Filtra por categoría. Si ya está seleccionada, quita el filtro (pone null)
+    fun filtrar(categoria: String?) {
+        if (_categoriaSeleccionada.value == categoria) {
+            _categoriaSeleccionada.value = null
+        } else {
+            _categoriaSeleccionada.value = categoria
+        }
+        // Al cambiar el filtro limpio la selección, por si el lugar elegido ya no se ve
+        _seleccionado.value = null
+    }
 
     fun buscar() {
         // Primero reviso si el celular tiene Google Play Services
@@ -81,7 +109,7 @@ class MapaViewModel(
         _seleccionado.value = id
     }
 
-    // El más cercano es el primero de la lista que ya tiene distancia
+    // El más cercano es el primero de la lista (filtrada) que ya tiene distancia
     val masCercano: StateFlow<Lugar?> = lugares
         .map { lista -> lista.firstOrNull { it.metros != null }?.lugar }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
